@@ -12,3 +12,4 @@ dataset_zip
 
 .pytest_cache
 .vscode
+.ruff_cache
