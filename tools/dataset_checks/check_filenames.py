@@ -5,7 +5,7 @@ import argparse
 file_pattern = re.compile(r"^(\d+)\s+(SL|SP|RL|RP)\s+([1-5])\s+(H|P)\s*(UV)?\.jpg$")
 
 """
-File pattern: [PatientID] [LimbCode] [Digit] [Position][UV].jpg
+File pattern: [PatientID] [LimbCode] [Digit] [Position] [UV].jpg
    Components (space-separated):
    - PatientID: digits
    - LimbCode: SL/SP/RL/RP -> Left foot / Right foot / Left hand / Right hand
@@ -22,7 +22,7 @@ def is_img(filename):
     return ext in image_extensions
 
 
-def validate_filenames(folder_path):
+def check_filenames(folder_path):
     invalid_files = []
 
     for dirpath, _, filenames in os.walk(folder_path):
@@ -45,4 +45,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    validate_filenames(args.folder_path)
+    check_filenames(args.folder_path)
