@@ -3,38 +3,36 @@ import argparse
 from collections import defaultdict
 
 
-def get_patient_ids(folder_path):
+def get_patient_ids(dataset_dir):
     patient_ids = defaultdict(set)
-
-    for disease in os.listdir(folder_path):
-        disease_path = os.path.join(folder_path, disease)
-        if os.path.isdir(disease_path):
-            for patient_folder in os.listdir(disease_path):
-                patient_id = patient_folder.split(" ")[0]
-                patient_ids[patient_id].add(disease)
-
+    for class_name in os.listdir(dataset_dir):
+            class_dir = os.path.join(dataset_dir, class_name)
+            if not os.path.isdir(class_dir):
+                continue
+            for patient_id in os.listdir(class_dir):
+                patient_id.split()
+                patient_ids[patient_id.split()[0]].add(class_name)
     return patient_ids
 
 
-def check_duplicates(folder_path):
-    patient_ids = get_patient_ids(folder_path)
-    duplicates = {
-        pid: diseases for pid, diseases in patient_ids.items() if len(diseases) > 1
-    }
-
-    if duplicates:
-        print("Patients present in multiple disease categories:")
-        for pid, diseases in duplicates.items():
-            print(f"Patient {pid} found in: {', '.join(diseases)}")
-    else:
-        print("✓ No duplicate patients found.")
+def check_duplicates(dataset_dir):
+    patient_ids = get_patient_ids(dataset_dir)
+    duplicate_patients = []
+    for patient_id, classes in patient_ids.items():
+        if len(classes) > 1:
+            duplicate_patients.append(patient_id)
+    if duplicate_patients:
+        print("Duplicate patients found:")
+        for patient_id in duplicate_patients:
+            print(patient_id)
+    print("✓ No duplicate patients found.")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Check for duplicate patients across disease categories."
+        description="Check for duplicate patients across classes_dir categories."
     )
-    parser.add_argument("folder_path", type=str, help="Path to the dataset folder")
+    parser.add_argument("--dataset_dir", type=str, help="Path to the dataset folder", default="datasets/dataset")
     args = parser.parse_args()
 
-    check_duplicates(args.folder_path)
+    check_duplicates(args.dataset_dir)

@@ -22,10 +22,10 @@ def is_img(filename):
     return ext in image_extensions
 
 
-def check_filenames(folder_path):
+def check_filenames(dataset_dir):
     invalid_files = []
 
-    for dirpath, _, filenames in os.walk(folder_path):
+    for dirpath, _, filenames in os.walk(dataset_dir):
         for filename in filenames:
             if is_img(filename) and not file_pattern.match(filename):
                 invalid_files.append(os.path.join(dirpath, filename))
@@ -41,8 +41,8 @@ def check_filenames(folder_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Validate file names in a folder.")
     parser.add_argument(
-        "folder_path", type=str, help="Path to the folder containing files"
+        "--dataset_dir", type=str, help="Path to the folder containing files", default="datasets/dataset"
     )
     args = parser.parse_args()
 
-    check_filenames(args.folder_path)
+    check_filenames(args.dataset_dir)
