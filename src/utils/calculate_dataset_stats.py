@@ -26,21 +26,7 @@ def process_image_batch(image_paths):
     return results
 
 
-def calculate_dataset_statistics(root_dir, batch_size=32):
-    image_paths = []
-    for main_category in os.listdir(root_dir):
-        main_category_path = os.path.join(root_dir, main_category)
-        if not os.path.isdir(main_category_path):
-            continue
-        for patient_dir in os.listdir(main_category_path):
-            patient_path = os.path.join(main_category_path, patient_dir)
-            if not os.path.isdir(patient_path):
-                continue
-            for img_name in os.listdir(patient_path):
-                if img_name.endswith((".jpg", ".jpeg", ".png")):
-                    img_path = os.path.join(patient_path, img_name)
-                    image_paths.append(img_path)
-
+def calculate_dataset_statistics(image_paths, batch_size=32):
     means_uv = []
     stds_uv = []
     means_normal = []
@@ -66,10 +52,10 @@ def calculate_dataset_statistics(root_dir, batch_size=32):
                     means_normal.append(mean)
                     stds_normal.append(std)
 
-    mean_uv = np.mean(means_uv, axis=0)
-    std_uv = np.mean(stds_uv, axis=0)
-    mean_normal = np.mean(means_normal, axis=0)
-    std_normal = np.mean(stds_normal, axis=0)
+    mean_uv = np.mean(means_uv, axis=0) if means_uv else np.zeros(3)
+    std_uv = np.mean(stds_uv, axis=0) if stds_uv else np.ones(3)
+    mean_normal = np.mean(means_normal, axis=0) if means_normal else np.zeros(3)
+    std_normal = np.mean(stds_normal, axis=0) if stds_normal else np.ones(3)
 
     return {
         "mean_uv": mean_uv.tolist(),
@@ -77,28 +63,4 @@ def calculate_dataset_statistics(root_dir, batch_size=32):
         "mean_normal": mean_normal.tolist(),
         "std_normal": std_normal.tolist(),
     }
-
-
-def save_to_json(data, output_path):
-    with open(output_path, "w") as f:
-        json.dump(data, f, indent=4)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Calculate dataset statistics.")
-    parser.add_argument("root_dir", type=str, help="Root directory of the dataset")
-    parser.add_argument(
-        "--output",
-        type=str,
-        default="datasets/dataset/dataset_stats.json",
-        help="Output JSON file path",
-    )
-    parser.add_argument(
-        "--batch_size", type=int, default=32, help="Batch size for image loading"
-    )
-
-    args = parser.parse_args()
-
-    statistics = calculate_dataset_statistics(args.root_dir, args.batch_size)
-    save_to_json(statistics, args.output)
-    print(f"Statistics saved to {args.output}")
+        
