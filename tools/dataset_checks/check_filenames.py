@@ -1,19 +1,6 @@
 import os
-import re
+from utils import get_metadata
 import argparse
-
-file_pattern = re.compile(r"^(\d+)\s+(SL|SP|RL|RP)\s+([1-5])\s+(H|P)\s*(UV)?\.jpg$")
-
-"""
-File pattern: [PatientID] [LimbCode] [Digit] [Position] [UV].jpg
-   Components (space-separated):
-   - PatientID: digits
-   - LimbCode: SL/SP/RL/RP -> Left foot / Right foot / Left hand / Right hand
-   - Digit: 1-5 -> Toe/Finger number
-   - Position: H/P -> Horizontal/Parallel orientation
-   - Optional: UV -> UV image
-   Example: "123 SL 2 H UV.jpg"
-"""
 
 
 def is_img(filename):
@@ -27,7 +14,7 @@ def check_filenames(dataset_dir):
 
     for dirpath, _, filenames in os.walk(dataset_dir):
         for filename in filenames:
-            if is_img(filename) and not file_pattern.match(filename):
+            if is_img(filename) and not get_metadata(filename):
                 invalid_files.append(os.path.join(dirpath, filename))
 
     if invalid_files:
@@ -41,7 +28,10 @@ def check_filenames(dataset_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Validate file names in a folder.")
     parser.add_argument(
-        "--dataset_dir", type=str, help="Path to the folder containing files", default="datasets/dataset"
+        "--dataset_dir",
+        type=str,
+        help="Path to the folder containing files",
+        default="datasets/dataset",
     )
     args = parser.parse_args()
 
