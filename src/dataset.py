@@ -1,5 +1,4 @@
 import cv2
-from pathlib import Path
 from torch.utils.data import Dataset
 from utils.get_metadata import get_metadata_from_image_path
 

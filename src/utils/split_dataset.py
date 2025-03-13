@@ -134,7 +134,7 @@ def split_dataset(
 
     if verbose:
         print(f"{'=' * 50}")
-        print(f"DATASET SPLIT SUMMARY")
+        print("DATASET SPLIT SUMMARY")
         print(f"{'=' * 50}")
         print(f"Train samples: {len(train)}")
         print(f"Validation samples: {len(val)}")
@@ -143,7 +143,7 @@ def split_dataset(
 
         # Calculate class distributions with percentages
         print(f"\n{'=' * 50}")
-        print(f"CLASS DISTRIBUTION")
+        print("CLASS DISTRIBUTION")
         print(f"{'=' * 50}")
 
         # Train distribution

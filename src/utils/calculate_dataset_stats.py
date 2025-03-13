@@ -1,8 +1,6 @@
 import os
 import cv2
 import numpy as np
-import argparse
-import json
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from tqdm import tqdm
 
