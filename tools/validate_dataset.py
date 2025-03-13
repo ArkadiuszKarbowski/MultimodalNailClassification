@@ -13,7 +13,10 @@ def validate_dataset(dataset_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run all dataset validation checks.")
     parser.add_argument(
-        "--dataset_dir", type=str, help="Path to the root folder of the dataset", default="datasets/dataset"
+        "--dataset_dir",
+        type=str,
+        help="Path to the root folder of the dataset",
+        default="datasets/dataset",
     )
     args = parser.parse_args()
 

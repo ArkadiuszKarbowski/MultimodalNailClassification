@@ -63,4 +63,3 @@ def calculate_dataset_statistics(image_paths, batch_size=32):
         "mean_normal": mean_normal.tolist(),
         "std_normal": std_normal.tolist(),
     }
-        

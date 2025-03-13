@@ -6,12 +6,12 @@ from collections import defaultdict
 def get_patient_ids(dataset_dir):
     patient_ids = defaultdict(set)
     for class_name in os.listdir(dataset_dir):
-            class_dir = os.path.join(dataset_dir, class_name)
-            if not os.path.isdir(class_dir):
-                continue
-            for patient_id in os.listdir(class_dir):
-                patient_id.split()
-                patient_ids[patient_id.split()[0]].add(class_name)
+        class_dir = os.path.join(dataset_dir, class_name)
+        if not os.path.isdir(class_dir):
+            continue
+        for patient_id in os.listdir(class_dir):
+            patient_id.split()
+            patient_ids[patient_id.split()[0]].add(class_name)
     return patient_ids
 
 
@@ -32,7 +32,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Check for duplicate patients across classes_dir categories."
     )
-    parser.add_argument("--dataset_dir", type=str, help="Path to the dataset folder", default="datasets/dataset")
+    parser.add_argument(
+        "--dataset_dir",
+        type=str,
+        help="Path to the dataset folder",
+        default="datasets/dataset",
+    )
     args = parser.parse_args()
 
     check_duplicates(args.dataset_dir)
