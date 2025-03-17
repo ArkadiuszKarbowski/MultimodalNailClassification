@@ -41,7 +41,7 @@ def parse_filename(filename):
     return info
 
 
-def get_metadata_from_image_path(image_path):
+def get_img_metadata(image_path):
     filename = PurePath(image_path).name
     class_mapping = {
         "ŁUSZCZYCA": "psoriasis",
@@ -50,9 +50,10 @@ def get_metadata_from_image_path(image_path):
         "ZDROWE PAZNOKCIE": "healthy",
     }
 
-    image_class = PurePath(image_path).parts[-2]
-
-    return parse_filename(filename)
+    class_folder = PurePath(image_path).parts[-3]
+    info = {"class": class_mapping[class_folder]}
+    info.update(parse_filename(filename))
+    return info
 
 
 if __name__ == "__main__":
@@ -63,4 +64,4 @@ if __name__ == "__main__":
         "data/train/madeup/101 RP 5 P UV.jpg",
     ]
     for image_path in image_paths:
-        print(get_metadata_from_image_path(image_path))
+        print(get_img_metadata(image_path))
