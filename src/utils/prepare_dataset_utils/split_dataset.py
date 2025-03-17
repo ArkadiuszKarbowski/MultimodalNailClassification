@@ -76,6 +76,8 @@ def split_dataset(
         class_dir = os.path.join(dataset_dir, class_name)
         if not os.path.isdir(class_dir):
             continue
+        if class_name == ".stats":
+            continue
 
         for patient_id in os.listdir(class_dir):
             patient_dir = os.path.join(class_dir, patient_id)

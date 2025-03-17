@@ -115,7 +115,7 @@ def calculate_dataset_statistics(
                     chunk = valid_batch[i : i + chunk_size].to(device)
 
                     # Calculate statistics
-                    with torch.no_grad(): 
+                    with torch.no_grad():
                         chunk_mean = torch.mean(chunk, dim=[2, 3])
                         chunk_std = torch.std(chunk, dim=[2, 3])
 
@@ -185,5 +185,8 @@ def get_or_calc_stats(
     else:
         print("Calculating new dataset statistics")
         return calculate_dataset_statistics(
-            image_paths, resize_shape=resize_shape, output_json=stats_json_path, verbose=verbose
+            image_paths,
+            resize_shape=resize_shape,
+            output_json=stats_json_path,
+            verbose=verbose,
         )
