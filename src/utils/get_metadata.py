@@ -45,8 +45,8 @@ def get_img_metadata(image_path):
     filename = PurePath(image_path).name
     class_mapping = {
         "ŁUSZCZYCA": "psoriasis",
-        "ONICOMYKOZA": "onychomycosis",
-        "ONNYCHODYSTROFIA MECHANICZNA": "mechanical_dystrophy",
+        "ONYCHOMYKOZA": "onychomycosis",
+        "ONYCHODYSTROFIA MECHANICZNA": "mechanical_dystrophy",
         "ZDROWE PAZNOKCIE": "healthy",
     }
 
