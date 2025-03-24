@@ -1,5 +1,6 @@
 import os
 import argparse
+import re
 
 
 def count_nails_in_folder(folder_path):
@@ -9,10 +10,11 @@ def count_nails_in_folder(folder_path):
     for item in os.listdir(folder_path):
         item_path = os.path.join(folder_path, item)
         if os.path.isdir(item_path):
-            try:
-                nails = int(item.split("(")[1].split(" ")[0])
+            match = re.search(r"\(\s*(\d+)", item)
+            if match:
+                nails = int(match.group(1))
                 total_nails += nails
-            except (IndexError, ValueError):
+            else:
                 invalid_subfolders.append(item)
 
     if invalid_subfolders:

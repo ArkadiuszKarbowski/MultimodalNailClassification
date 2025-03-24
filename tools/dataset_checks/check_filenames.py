@@ -1,6 +1,9 @@
 import os
-from utils import get_metadata
 import argparse
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+from src.utils.get_metadata import get_img_metadata
 
 
 def is_img(filename):
@@ -14,8 +17,9 @@ def check_filenames(dataset_dir):
 
     for dirpath, _, filenames in os.walk(dataset_dir):
         for filename in filenames:
-            if is_img(filename) and not get_metadata(filename):
-                invalid_files.append(os.path.join(dirpath, filename))
+            full_path = os.path.join(dirpath, filename)
+            if is_img(filename) and not get_img_metadata(full_path):
+                invalid_files.append(full_path)
 
     if invalid_files:
         print("Invalid file names:")
