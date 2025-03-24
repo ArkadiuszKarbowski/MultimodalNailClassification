@@ -9,26 +9,35 @@ class MultimodalResNet(nn.Module):
         super().__init__()
         weights = ResNet18_Weights.IMAGENET1K_V1
 
-        # Feature extractors with partial unfreezing
-        def create_backbone():
+        def create_normal_backbone():
             model = models.resnet18(weights=weights)
-
             # Freeze first 3 blocks
             for param in model.parameters():
                 param.requires_grad = False
-
-            # Unfreeze last block
+            # Unfreeze only layer4
             for param in model.layer4.parameters():
                 param.requires_grad = True
-
             return nn.Sequential(*list(model.children())[:-1])
 
-        self.normal_branch = create_backbone()
-        self.uv_branch = create_backbone()
+        def create_uv_backbone():
+            model = models.resnet18(weights=weights)
+            # Freeze only early layers
+            for param in model.conv1.parameters():
+                param.requires_grad = False
+            for param in model.bn1.parameters():
+                param.requires_grad = False
+            # Unfreeze layer2, layer3, and layer4
+            for layer in [model.layer2, model.layer3, model.layer4]:
+                for param in layer.parameters():
+                    param.requires_grad = True
+            return nn.Sequential(*list(model.children())[:-1])
+
+        self.normal_branch = create_normal_backbone()
+        self.uv_branch = create_uv_backbone()
 
         # Enhanced attention mechanism
         self.attention = nn.Sequential(
-            nn.Linear(1024, 256), 
+            nn.Linear(1024, 256),  # Increased capacity
             nn.Dropout(0.5),
             nn.Tanh(),
             nn.Linear(256, 2),
@@ -39,8 +48,12 @@ class MultimodalResNet(nn.Module):
             nn.Linear(512, 512),
             nn.LayerNorm(512),
             nn.ReLU(),
-            nn.Dropout(0.6),
-            nn.Linear(512, num_classes),
+            nn.Dropout(0.4),
+            nn.Linear(512, 256),
+            nn.LayerNorm(256),
+            nn.ReLU(),
+            nn.Dropout(0.4),
+            nn.Linear(256, num_classes),
         )
 
     def forward(self, x_normal, x_uv):
@@ -54,7 +67,7 @@ class MultimodalResNet(nn.Module):
         # Apply attention weights and add a proper residual connection
         weighted_normal = f_normal * attention_weights[:, 0:1]
         weighted_uv = f_uv * attention_weights[:, 1:2]
-
-        fused = weighted_normal + weighted_uv + 0.2 * (f_normal + f_uv)
+        self.fusion_weight = nn.Parameter(torch.tensor(0.2))
+        fused = weighted_normal + weighted_uv + self.fusion_weight * (f_normal + f_uv)
 
         return self.classifier(fused)
