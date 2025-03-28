@@ -38,11 +38,11 @@ class MultimodalResNet(nn.Module):
             nn.Linear(1024, 1024),
             nn.BatchNorm1d(1024),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Dropout(0.7),
             nn.Linear(1024, 512),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Dropout(0.3),
+            nn.Dropout(0.5),
             nn.Linear(512, num_classes),
         )
 
@@ -52,9 +52,11 @@ class MultimodalResNet(nn.Module):
         f_uv = self.uv_branch(x_uv).flatten(1)  # (B, 512)
 
         # Cross-attention mechanism
+        # Normal features attended by UV information
         uv_attention = self.cross_attention["normal"](f_uv)
         attended_normal = f_normal * uv_attention
 
+        # UV features attended by normal information
         normal_attention = self.cross_attention["uv"](f_normal)
         attended_uv = f_uv * normal_attention
 

@@ -28,7 +28,7 @@ class MultimodalResNet(nn.Module):
 
         # Enhanced attention mechanism
         self.attention = nn.Sequential(
-            nn.Linear(1024, 256), 
+            nn.Linear(1024, 256),
             nn.Dropout(0.5),
             nn.Tanh(),
             nn.Linear(256, 2),

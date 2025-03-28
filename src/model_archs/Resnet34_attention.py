@@ -9,7 +9,7 @@ class MultimodalResNet(nn.Module):
         super().__init__()
         weights = ResNet34_Weights.IMAGENET1K_V1
 
-        def create_normal_backbone():
+        def create_backbone():
             model = models.resnet34(weights=weights)
             # Freeze first 3 blocks
             for param in model.parameters():
@@ -19,21 +19,8 @@ class MultimodalResNet(nn.Module):
                 param.requires_grad = True
             return nn.Sequential(*list(model.children())[:-1])
 
-        def create_uv_backbone():
-            model = models.resnet34(weights=weights)
-            # Freeze only early layers
-            for param in model.conv1.parameters():
-                param.requires_grad = False
-            for param in model.bn1.parameters():
-                param.requires_grad = False
-            # Unfreeze layer2, layer3, and layer4
-            for layer in [model.layer2, model.layer3, model.layer4]:
-                for param in layer.parameters():
-                    param.requires_grad = True
-            return nn.Sequential(*list(model.children())[:-1])
-
-        self.normal_branch = create_normal_backbone()
-        self.uv_branch = create_uv_backbone()
+        self.normal_branch = create_backbone()
+        self.uv_branch = create_backbone()
 
         self.attention = nn.Sequential(
             nn.Linear(1024, 256),  # Increased capacity
