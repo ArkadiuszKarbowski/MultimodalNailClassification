@@ -12,6 +12,7 @@ def prepare_dataset(
     force_recalculate_stats=False,
     filter_incomplete=True,
     filter_perspective=False,
+    seed=2137,
 ):
     """
     Prepare dataset with proper statistics calculation
@@ -47,7 +48,7 @@ def prepare_dataset(
 
     # Split dataset
     train_paths, val_paths, test_paths = split_dataset(
-        dataset_dir, verbose=verbose, modality=modality
+        dataset_dir, verbose=verbose, modality=modality, seed=seed
     )
 
     # Filter incomplete items

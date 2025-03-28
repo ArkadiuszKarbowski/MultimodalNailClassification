@@ -25,7 +25,7 @@ def split_dataset(
     val_ratio=0.1,
     test_ratio=0.1,
     modality=1,
-    random_state=2137,
+    seed=2137,
     verbose=True,
 ):
     """
@@ -44,7 +44,7 @@ def split_dataset(
         - 1: Individual images (default)
         - 2: Paired UV/non-UV images from the same nail
         - 4: All combinations (H/P positions x UV/non-UV)
-    random_state : int, optional
+    seed : int, optional
         Random seed for reproducible splits. Default: 2137
     verbose : bool, optional
         Enable split statistics output. Default: True
@@ -117,7 +117,7 @@ def split_dataset(
     for class_name in nail_df["class"].unique():
         # Get all nail IDs for this class
         class_nail_ids = nail_df[nail_df["class"] == class_name]["nail_id"].values
-        np.random.seed(random_state)
+        np.random.seed(seed)
         np.random.shuffle(class_nail_ids)
 
         n_total = len(class_nail_ids)

@@ -53,22 +53,31 @@ def get_transform_mod2(dataset_stats, training):
     geometric = A.Compose(
         [
             A.HorizontalFlip(p=0.5),
+            A.VerticalFlip(p=0.5),
             A.Affine(
                 translate_percent=(-0.1, 0.1),
                 scale=(0.85, 1.15),
-                rotate=(-25, 25),
+                rotate=(-30, 30),
                 shear=(-5, 5),
                 p=0.7,
             ),
             A.Perspective(scale=(0.02, 0.06), p=0.3),
             A.RandomResizedCrop(
                 size=(target_height, target_width),
-                scale=(0.8, 1.0),
+                scale=(0.75, 1.0),
                 ratio=(0.9, 1.1),
                 p=0.5,
             ),
-            A.GridDistortion(num_steps=5, distort_limit=0.15, p=0.3),
+            A.GridDistortion(num_steps=5, distort_limit=0.15, p=0.4),
             A.ElasticTransform(alpha=1, sigma=50, p=0.3),
+            A.OneOf(
+                [
+                    A.GaussianBlur(p=1.0),
+                    A.MotionBlur(p=1.0),
+                    A.MedianBlur(blur_limit=5, p=1.0),
+                ],
+                p=0.3,
+            ),
         ],
         additional_targets={"uv": "image"},
     )
@@ -83,6 +92,9 @@ def get_transform_mod2(dataset_stats, training):
                     ),
                     A.HueSaturationValue(
                         hue_shift_limit=10, sat_shift_limit=20, val_shift_limit=0
+                    ),
+                    A.ColorJitter(
+                        brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1, p=0.7
                     ),
                 ],
                 p=0.7,
