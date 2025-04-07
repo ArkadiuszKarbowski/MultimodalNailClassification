@@ -8,16 +8,19 @@ from torchmetrics.classification import (
     MulticlassConfusionMatrix,
     Accuracy,
 )
+import json
 
-from src.model_archs.Resnet18_attention_v2 import MultimodalResNet
 from src.utils.prepare_dataset import prepare_dataset
 from src.dataset import NailDataset
 from src.augmentation import get_transforms
+from src.utils.get_model import get_model
 
 
-def test_model(config):
+def test_model(output_dir):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
+
+    config = json.load(open(os.path.join(output_dir, "config.json")))
 
     # Load datasets
     train_files, val_files, test_files, stats = prepare_dataset(
@@ -29,12 +32,9 @@ def test_model(config):
         seed=config["seed"],
     )
 
-    model_path = config["model_path"]
-
-    model = MultimodalResNet(num_classes=config["num_classes"]).to(device)
-    model.load_state_dict(torch.load(model_path))
-    model.eval()
-    print(f"Loaded model from {model_path}")
+    model = get_model(config["model_arch_path"], model_args={"num_classes": config["num_classes"]})
+    model.load_state_dict(torch.load(os.path.join(output_dir, "best_model_state.pth")))
+    model.to(device)
 
     # Test dataset
     test_dataset = NailDataset(
@@ -133,12 +133,9 @@ def test_model(config):
 
 if __name__ == "__main__":
     import argparse
-    import json
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("config", type=str, help="Path to config file")
+    parser.add_argument("output_dir", type=str, help="directory containing outputs from training")
     args = parser.parse_args()
 
-    config = json.load(open(args.config))
-
-    test_model(config)
+    test_model(args.output_dir)
