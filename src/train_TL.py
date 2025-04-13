@@ -53,7 +53,6 @@ def train_model(config):
         nonlocal stop_training
         print("\nKeyboard interrupt received. Saving checkpoint and gracefully shutting down...")
         stop_training = True
-        # Don't exit here - let the training loop handle a clean shutdown
     
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -115,27 +114,19 @@ def train_model(config):
     )
 
     # Model initialization
-    model = get_model(config["model_arch_path"], model_args={"num_classes": config["num_classes"]})
+    model = get_model(config["model_arch_path"], model_args={"num_classes": config["num_classes"], "initial_freeze": config["initial_freeze"]})
     model = model.to(device)
 
     # Optimizer with weight decay
     optimizer = Adam(
         [
-            {"params": model.normal_branch.parameters()},
-            {"params": model.uv_branch.parameters()},
-            {"params": model.cross_attention.parameters()},
-            {"params": model.classifier.parameters()},
+            {"params": model.normal_branch.parameters(), "lr": config["backbone_lr"]},
+            {"params": model.uv_branch.parameters(), "lr": config["backbone_lr"]},
+            {"params": model.classifier.parameters(), "lr": config["classifier_lr"]},
+
         ],
-        lr=config["lr"],
         weight_decay=config["weight_decay"],
     )
-
-    max_lrs = [
-        1e-5,  # normal_branch
-        1e-5,  # uv_branch
-        config["lr"],  # cross_attention
-        config["lr"],  # classifier
-    ]
 
     # Calculate total number of training steps
     total_steps = len(train_loader) * config["epochs"]
@@ -156,7 +147,7 @@ def train_model(config):
     main_scheduler = lr_scheduler.CosineAnnealingLR(
         optimizer,
         T_max=total_steps - warmup_steps,
-        eta_min=max_lrs[0] / 1e4  # Similar to final_div_factor in OneCycleLR
+        eta_min=config["backbone_lr"] / 1e4  
     )
     
     # Combine schedulers
@@ -200,11 +191,15 @@ def train_model(config):
     early_stop_counter = 0
     history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": [], "conf_matrix": []}
 
-    # Modify the training loop to check for stop_training flag
     for epoch in range(config["epochs"]):
         if stop_training:
             print("Stopping training early due to keyboard interrupt.")
             break
+            
+        # Unfreeze last blocks after specified number of epochs
+        if epoch == config["unfreeze_after_epochs"]:
+            model.unfreeze_last_block()
+            print("Unfrozen last blocks in both branches")
             
         # Training phase
         model.train()
@@ -242,11 +237,10 @@ def train_model(config):
                 pbar.set_postfix(
                     {
                         "loss": f"{loss.item():.4f}",
-                        "lr": f"{optimizer.param_groups[0]['lr']:.2e}",
+                        "lr": f"{optimizer.param_groups[-1]['lr']:.2e}",
                     }
                 )
 
-            # Check again before validation
             if stop_training:
                 break
                 
@@ -327,19 +321,21 @@ def train_model(config):
 
 
 if __name__ == "__main__":
-    # Configuration dictionary
     config = {
         "dataset_path": "datasets/preprocessed_dataset",
         "num_classes": 3,
-        "lr": 5e-5,
-        "weight_decay": 5e-6,
+        "backbone_lr": 5e-6,           # Lower learning rate for backbone
+        "classifier_lr": 2e-4,         # Reduced learning rate for classifier
+        "weight_decay": 3e-4,          # Increased weight decay
         "epochs": 70,
         "early_stop_patience": 12,
         "batch_size": 8,
         "modality": 2,
         "target_shape": (512, 512),
         "seed": 2137,
-        "model_arch_path": "src/model_archs/Resnets/Resnet18_attention_v2.py",
+        "model_arch_path": "src/model_archs/convnexts/Convnext_small_TL.py",  
+        "initial_freeze": True,        
+        "unfreeze_after_epochs": 10,  
     }
 
     # Training
