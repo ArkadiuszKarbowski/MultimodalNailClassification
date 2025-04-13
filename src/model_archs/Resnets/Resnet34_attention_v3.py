@@ -1,20 +1,17 @@
 import torch
 import torch.nn as nn
 from torchvision import models
-from torchvision.models import ResNet50_Weights
+from torchvision.models import ResNet34_Weights
 
 
-class MultimodalResNet(nn.Module):
+class Model(nn.Module):
     def __init__(self, num_classes):
         super().__init__()
-        weights = ResNet50_Weights.IMAGENET1K_V1
-
-        # Feature dimension from ResNet50
-        feature_dim = 2048
+        weights = ResNet34_Weights.IMAGENET1K_V1
 
         # Create backbones
         def create_backbone():
-            model = models.resnet50(weights=weights)
+            model = models.resnet34(weights=weights)
             for param in model.parameters():
                 param.requires_grad = False
             for param in [
@@ -28,49 +25,40 @@ class MultimodalResNet(nn.Module):
         self.normal_branch = create_backbone()
         self.uv_branch = create_backbone()
 
-        # Cross-modal attention components - updated dimensions
+        # Cross-modal attention components
         self.cross_attention = nn.ModuleDict(
             {
                 "normal": nn.Sequential(
-                    nn.Linear(feature_dim, 1024),
-                    nn.ReLU(),
-                    nn.Linear(1024, feature_dim),
-                    nn.Sigmoid(),
+                    nn.Linear(512, 256), nn.ReLU(), nn.Linear(256, 512), nn.Sigmoid()
                 ),
                 "uv": nn.Sequential(
-                    nn.Linear(feature_dim, 1024),
-                    nn.ReLU(),
-                    nn.Linear(1024, feature_dim),
-                    nn.Sigmoid(),
+                    nn.Linear(512, 256), nn.ReLU(), nn.Linear(256, 512), nn.Sigmoid()
                 ),
             }
         )
 
-        # Lightweight self-attention - updated dimensions
+        # Lightweight self-attention - only adds minimal parameters
         self.self_attention = nn.ModuleDict(
-            {
-                "normal": nn.Linear(feature_dim, feature_dim),
-                "uv": nn.Linear(feature_dim, feature_dim),
-            }
+            {"normal": nn.Linear(512, 512), "uv": nn.Linear(512, 512)}
         )
 
-        # Modality gating mechanism - updated dimensions
-        self.gate = nn.Sequential(nn.Linear(feature_dim * 2, 2), nn.Softmax(dim=1))
+        # Modality gating mechanism
+        self.gate = nn.Sequential(nn.Linear(1024, 2), nn.Softmax(dim=1))
 
-        # Simplified classifier - updated dimensions
+        # Simplified classifier
         self.classifier = nn.Sequential(
-            nn.Linear(feature_dim * 2, 1024),
-            nn.BatchNorm1d(1024),
+            nn.Linear(1024, 512),
+            nn.BatchNorm1d(512),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.LayerNorm(1024),
-            nn.Linear(1024, num_classes),
+            nn.LayerNorm(512),
+            nn.Linear(512, num_classes),
         )
 
     def forward(self, x_normal, x_uv):
         # Extract features
-        f_normal = self.normal_branch(x_normal).flatten(1)  # (B, 2048)
-        f_uv = self.uv_branch(x_uv).flatten(1)  # (B, 2048)
+        f_normal = self.normal_branch(x_normal).flatten(1)  # (B, 512)
+        f_uv = self.uv_branch(x_uv).flatten(1)  # (B, 512)
 
         # Apply lightweight self-attention
         normal_attn = torch.sigmoid(self.self_attention["normal"](f_normal))

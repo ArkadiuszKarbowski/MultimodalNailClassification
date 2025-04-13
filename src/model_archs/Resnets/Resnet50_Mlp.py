@@ -3,9 +3,9 @@ import torch.nn as nn
 from torchvision import models
 
 
-class MultimodalResNet(nn.Module):
+class Model(nn.Module):
     def __init__(self, num_classes, pretrained=True):
-        super(MultimodalResNet, self).__init__()
+        super(Model, self).__init__()
 
         # Normal spectrum branch
         self.resnet_normal = models.resnet50(pretrained=pretrained)

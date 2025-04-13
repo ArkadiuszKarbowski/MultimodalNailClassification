@@ -4,7 +4,7 @@ from torchvision import models
 from torchvision.models import ResNet18_Weights
 
 
-class MultimodalResNet(nn.Module):
+class Model(nn.Module):
     def __init__(self, num_classes):
         super().__init__()
         weights = ResNet18_Weights.IMAGENET1K_V1
