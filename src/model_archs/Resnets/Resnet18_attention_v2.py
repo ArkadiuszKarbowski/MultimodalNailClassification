@@ -36,11 +36,11 @@ class Model(nn.Module):
         # Classifier
         self.classifier = nn.Sequential(
             nn.Linear(1024, 1024),
-            nn.GroupNorm(32, 1024),  
+            nn.GroupNorm(32, 1024),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(1024, 512),
-            nn.GroupNorm(16, 512),   
+            nn.GroupNorm(16, 512),
             nn.ReLU(),
             nn.Dropout(0.3),
             nn.Linear(512, num_classes),

@@ -3,13 +3,13 @@ import torch.nn as nn
 from torchvision import models
 from torchvision.models import ConvNeXt_Tiny_Weights
 
+
 class Model(nn.Module):
-    
     def __init__(self, num_classes, initial_freeze=True):
         super().__init__()
         self.num_classes = num_classes
         weights = ConvNeXt_Tiny_Weights.IMAGENET1K_V1
-        
+
         self.num_features_per_branch = 768  # Output features of ConvNeXt-Tiny
         input_features_classifier = self.num_features_per_branch * 2
         hidden_features = 512
@@ -17,14 +17,13 @@ class Model(nn.Module):
 
         # Normal images branch
         base_model_normal = models.convnext_tiny(weights=weights)
-        self.normal_branch = nn.Sequential(*base_model_normal.features)  
+        self.normal_branch = nn.Sequential(*base_model_normal.features)
         self.normal_avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
         # UV images branch
         base_model_uv = models.convnext_tiny(weights=weights)
-        self.uv_branch = nn.Sequential(*base_model_uv.features) 
+        self.uv_branch = nn.Sequential(*base_model_uv.features)
         self.uv_avgpool = nn.AdaptiveAvgPool2d((1, 1))
-
 
         # Initial backbone freezing
         if initial_freeze:
@@ -34,14 +33,14 @@ class Model(nn.Module):
 
         # Classification
         self.classifier = nn.Sequential(
-            nn.GroupNorm(32, input_features_classifier),  
+            nn.GroupNorm(32, input_features_classifier),
             nn.Linear(input_features_classifier, hidden_features),
             nn.ReLU(),
-            nn.GroupNorm(32, hidden_features), 
+            nn.GroupNorm(32, hidden_features),
             nn.Dropout(dropout_rate),
-            nn.Linear(hidden_features, num_classes)
+            nn.Linear(hidden_features, num_classes),
         )
-    
+
     def unfreeze_last_block(self):
         print("Unfreezing the last block in both ConvNext-Tiny branches...")
         for branch in [self.normal_branch, self.uv_branch]:
@@ -50,9 +49,13 @@ class Model(nn.Module):
                 # Unfreeze the last block (e.g., the last 2 layers)
                 for param in branch[-2:].parameters():
                     param.requires_grad = True
-                print(f"  - Unfrozen parameters in the last block of ConvNext-Tiny branch")
+                print(
+                    "  - Unfrozen parameters in the last block of ConvNext-Tiny branch"
+                )
             else:
-                print(f"  - Warning: Could not identify last block in branch for unfreezing.")
+                print(
+                    "  - Warning: Could not identify last block in branch for unfreezing."
+                )
 
     def forward(self, x_normal, x_uv):
         f_normal = self.normal_branch(x_normal)
@@ -64,6 +67,6 @@ class Model(nn.Module):
         f_uv = torch.flatten(f_uv, 1)
 
         merged_features = torch.cat([f_normal, f_uv], dim=1)
-        
+
         output = self.classifier(merged_features)
         return output

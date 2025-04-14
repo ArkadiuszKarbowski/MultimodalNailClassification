@@ -32,7 +32,9 @@ def test_model(output_dir):
         seed=config["seed"],
     )
 
-    model = get_model(config["model_arch_path"], model_args={"num_classes": config["num_classes"]})
+    model = get_model(
+        config["model_arch_path"], model_args={"num_classes": config["num_classes"]}
+    )
     model.load_state_dict(torch.load(os.path.join(output_dir, "best_model_state.pth")))
     model.to(device)
 
@@ -135,7 +137,9 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("output_dir", type=str, help="directory containing outputs from training")
+    parser.add_argument(
+        "output_dir", type=str, help="directory containing outputs from training"
+    )
     args = parser.parse_args()
 
     test_model(args.output_dir)

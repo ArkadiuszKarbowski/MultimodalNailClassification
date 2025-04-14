@@ -8,14 +8,12 @@ from tqdm import tqdm
 import os
 from datetime import datetime
 import json
-import sys
 import signal
 from torch import nn
 
 from src.dataset import NailDataset
 from src.utils.prepare_dataset import prepare_dataset
 from src.augmentation import get_transforms
-from src.focal_loss import FocalLoss
 from src.utils.get_model import get_model
 
 
@@ -25,39 +23,40 @@ def train_model(config):
     time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     output_dir = os.path.join("outputs", time)
     os.makedirs(output_dir, exist_ok=True)
-    
-    config['output_dir'] = output_dir
+
+    config["output_dir"] = output_dir
     with open(os.path.join(output_dir, "config.json"), "w") as f:
         json.dump(config, f)
 
     best_model_path = os.path.join(output_dir, "best_model_state.pth")
     last_model_path = os.path.join(output_dir, "last_model_state.pth")
     history_path = os.path.join(output_dir, "history.json")
-    
+
     # Initialize a stop training flag
     stop_training = False
-    
+
     def save_checkpoint(final=False):
         torch.save(model.state_dict(), last_model_path)
-        
+
         with open(history_path, "w") as f:
             json.dump(history, f)
-        
+
         if final:
             print(f"\nTraining complete! History and models saved to {output_dir}")
         else:
             print(f"\nCheckpoint saved to {output_dir}")
-    
+
     # Handle Ctrl+C more gracefully
     def signal_handler(sig, frame):
         nonlocal stop_training
-        print("\nKeyboard interrupt received. Saving checkpoint and gracefully shutting down...")
+        print(
+            "\nKeyboard interrupt received. Saving checkpoint and gracefully shutting down..."
+        )
         stop_training = True
         # Don't exit here - let the training loop handle a clean shutdown
-    
+
     signal.signal(signal.SIGINT, signal_handler)
 
-    
     train_files, val_files, test_files, stats = prepare_dataset(
         config["dataset_path"],
         verbose=False,
@@ -115,7 +114,9 @@ def train_model(config):
     )
 
     # Model initialization
-    model = get_model(config["model_arch_path"], model_args={"num_classes": config["num_classes"]})
+    model = get_model(
+        config["model_arch_path"], model_args={"num_classes": config["num_classes"]}
+    )
     model = model.to(device)
 
     # Optimizer with weight decay
@@ -140,30 +141,27 @@ def train_model(config):
     # Calculate total number of training steps
     total_steps = len(train_loader) * config["epochs"]
     warmup_steps = int(0.2 * total_steps)  # 20% warmup like pct_start in OneCycleLR
-    
+
     # Factor to start with lower learning rate (same as div_factor in OneCycleLR)
-    start_factor = 1/25
+    start_factor = 1 / 25
 
     # Warm-up scheduler - linear ramp from small lr to max_lr
     warmup_scheduler = lr_scheduler.LinearLR(
-        optimizer,
-        start_factor=start_factor,
-        end_factor=1.0,
-        total_iters=warmup_steps
+        optimizer, start_factor=start_factor, end_factor=1.0, total_iters=warmup_steps
     )
-    
+
     # Main scheduler - cosine annealing from max_lr down to very small lr
     main_scheduler = lr_scheduler.CosineAnnealingLR(
         optimizer,
         T_max=total_steps - warmup_steps,
-        eta_min=max_lrs[0] / 1e4  # Similar to final_div_factor in OneCycleLR
+        eta_min=max_lrs[0] / 1e4,  # Similar to final_div_factor in OneCycleLR
     )
-    
+
     # Combine schedulers
     scheduler = lr_scheduler.SequentialLR(
         optimizer,
         schedulers=[warmup_scheduler, main_scheduler],
-        milestones=[warmup_steps]
+        milestones=[warmup_steps],
     )
 
     scaler = GradScaler()
@@ -198,14 +196,20 @@ def train_model(config):
     # Training loop
     best_val_acc = 0.0
     early_stop_counter = 0
-    history = {"train_loss": [], "val_loss": [], "train_acc": [], "val_acc": [], "conf_matrix": []}
+    history = {
+        "train_loss": [],
+        "val_loss": [],
+        "train_acc": [],
+        "val_acc": [],
+        "conf_matrix": [],
+    }
 
     # Modify the training loop to check for stop_training flag
     for epoch in range(config["epochs"]):
         if stop_training:
             print("Stopping training early due to keyboard interrupt.")
             break
-            
+
         # Training phase
         model.train()
         running_loss = 0.0
@@ -249,7 +253,7 @@ def train_model(config):
             # Check again before validation
             if stop_training:
                 break
-                
+
             # Validation phase
             model.eval()
             val_loss = 0.0
@@ -313,16 +317,16 @@ def train_model(config):
             print(f"Error during training: {e}")
             save_checkpoint()
             raise e
-    
+
     # Save final model and clean up resources
     save_checkpoint(final=not stop_training)
-    
+
     # Clean up DataLoader workers
-    if hasattr(train_loader, '_iterator') and train_loader._iterator is not None:
+    if hasattr(train_loader, "_iterator") and train_loader._iterator is not None:
         train_loader._iterator._shutdown_workers()
-    if hasattr(val_loader, '_iterator') and val_loader._iterator is not None:
+    if hasattr(val_loader, "_iterator") and val_loader._iterator is not None:
         val_loader._iterator._shutdown_workers()
-    
+
     return history, model
 
 
